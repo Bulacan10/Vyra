@@ -26,6 +26,7 @@ export function evaluate({ section, rules, input, base, keys }) {
       id: `${section}:${i}`,
       section,
       severity: rule.severity,
+      kind: rule.kind,
       label: rule.label,
       detail: rule.detail,
       points,

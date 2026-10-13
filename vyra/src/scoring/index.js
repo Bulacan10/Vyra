@@ -42,6 +42,9 @@ export function computeTrustScore({ contract, social, community }) {
     verdict: verdictFor(score),
     confidence,
     wasCapped: capped < weighted,
+    missingSections: Object.keys(SECTION_WEIGHTS).filter(
+      (k) => !sections.some((s) => s.section === k)
+    ),
     sections,
     findings,
   };

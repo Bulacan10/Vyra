@@ -18,7 +18,7 @@ export default function Findings({ findings }) {
               )}
             </div>
             <p className="finding-meta">
-              {SECTION_NAME[f.section]}{f.detail ? `. ${f.detail}` : ''}
+              {SECTION_NAME[f.section]}{f.kind === 'control' ? ' (owner control)' : ''}{f.detail ? `. ${f.detail}` : ''}
             </p>
           </li>
         ))}

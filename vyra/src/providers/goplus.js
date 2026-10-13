@@ -1,6 +1,6 @@
 // Live contract data from the GoPlus Security public API.
-// NOTE: written against GoPlus's documented token_security response and not yet
-// verified against live responses. Anything missing maps to null ("unknown").
+// Checked against a live response for one token (USDT on Ethereum). Other chains
+// and token types are still untested. Anything missing maps to null ("unknown").
 
 export const CHAINS = {
   ethereum: { id: 1, label: 'Ethereum' },

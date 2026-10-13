@@ -19,6 +19,7 @@ export default function Verdict({ result }) {
   }
 
   const present = Object.fromEntries(result.sections.map((s) => [s.section, s]));
+  const missingNames = result.missingSections.map((k) => SECTION_NAMES[k]);
 
   return (
     <section className="verdict" aria-live="polite">
@@ -56,6 +57,7 @@ export default function Verdict({ result }) {
 
       <p className="confidence">
         {confidenceLabel(result.confidence)}: this score uses {Math.round(result.confidence * 100)}% of the signals Vyra can read.
+        {missingNames.length > 0 && ` Add ${missingNames.join(' and ')} details to raise it.`}
       </p>
       <p className="disclaimer">
         A heuristic estimate to help you look closer, not a guarantee of safety. Not financial advice.

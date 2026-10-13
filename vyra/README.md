@@ -26,6 +26,7 @@ Each section is scored 0 to 100 by a shared rule engine, then combined.
 | Community | 30% | Earns up to 100 points for size, real activity, moderators, pinned rules, no scam reports and organic growth |
 
 - **Deal-breakers cap the total.** A honeypot caps the overall score at 10, and three or more scam reports cap it at 40, however good everything else looks.
+- **Established tokens get a fairer reading.** A token with a verified source, 100,000+ holders, no scam traps and no known young age is treated as established. Owner-control powers (mint, pause, blacklist, upgradeable proxy, reclaiming ownership) and unlocked liquidity then count for 40% of their normal penalty. Scam traps (honeypot, hidden owner, high taxes, unverified code) are never discounted, and the hard caps still apply. Holder counts can be inflated by airdrop spam, which is why the discount is limited to owner-control findings.
 - **Missing data is not penalised.** Sections with no data are left out and the remaining weights are re-scaled. Unknown signals never trigger a rule. The **confidence** figure drops instead.
 - **Bands:** 80+ low risk, 60 to 79 moderate, 40 to 59 high, under 40 critical.
 

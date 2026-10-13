@@ -1,7 +1,7 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { computeTrustScore } from '../src/scoring/index.js';
-import { analyzeContract } from '../src/scoring/contract.js';
+import { analyzeContract, isEstablished } from '../src/scoring/contract.js';
 import { analyzeSocial } from '../src/scoring/social.js';
 import { analyzeCommunity } from '../src/scoring/community.js';
 import { mapGoPlus } from '../src/providers/goplus.js';
@@ -95,4 +95,74 @@ test('mapGoPlus converts string flags and numbers, leaving gaps as null', () => 
   assert.equal(s.lpLockedPercent, 60);
   assert.equal(s.isMintable, null);
   assert.equal(s.hasAudit, null);
+});
+
+// ---- Established-token handling ----
+
+// What a live scan of USDT on Ethereum returned (see the screenshot test run).
+const usdtLike = {
+  isOpenSource: true, isHoneypot: false, isProxy: false, isMintable: true,
+  ownerCanReclaim: false, hiddenOwner: false, ownerRenounced: null,
+  buyTax: 0, sellTax: 0, transferPausable: true, hasBlacklist: true,
+  cannotSellAll: null, holderCount: 15624287, lpLockedPercent: null,
+  contractAgeDays: null, hasAudit: null,
+};
+
+test('widely held verified token: owner powers cost less (USDT-like scores 87, low risk)', () => {
+  const r = computeTrustScore({ contract: usdtLike });
+  assert.equal(r.score, 87);
+  assert.equal(r.verdict.label, 'Low risk');
+  assert.ok(r.findings.some((f) => f.label === 'Widely held and verified'));
+});
+
+test('the same powers on a small token keep the full penalty (67)', () => {
+  const r = computeTrustScore({ contract: { ...usdtLike, holderCount: 640 } });
+  assert.equal(r.score, 67);
+  assert.ok(!r.findings.some((f) => f.label === 'Widely held and verified'));
+});
+
+test('established status needs verified source', () => {
+  assert.equal(isEstablished({ ...usdtLike, isOpenSource: false }), false);
+  assert.equal(isEstablished({ ...usdtLike, isOpenSource: null }), false);
+});
+
+test('established status is lost when any scam trap is present', () => {
+  for (const trap of [{ isHoneypot: true }, { cannotSellAll: true }, { hiddenOwner: true }, { sellTax: 0.2 }, { buyTax: 0.2 }]) {
+    assert.equal(isEstablished({ ...usdtLike, ...trap }), false, JSON.stringify(trap));
+  }
+});
+
+test('a known young contract is not treated as established, an unknown age is', () => {
+  assert.equal(isEstablished({ ...usdtLike, contractAgeDays: 20 }), false);
+  assert.equal(isEstablished({ ...usdtLike, contractAgeDays: 400 }), true);
+  assert.equal(isEstablished(usdtLike), true);
+});
+
+test('traps and caps are never discounted for a widely held token', () => {
+  const hidden = analyzeContract({ ...usdtLike, hiddenOwner: true });
+  const base = analyzeContract({ ...usdtLike, holderCount: 640, hiddenOwner: true });
+  assert.equal(hidden.score, base.score);
+  const honey = computeTrustScore({ contract: { ...usdtLike, isHoneypot: true } });
+  assert.ok(honey.score <= 10);
+});
+
+test('unlocked liquidity is softened only for established tokens', () => {
+  const small = analyzeContract({ isOpenSource: true, holderCount: 500, lpLockedPercent: 10 });
+  const big = analyzeContract({ isOpenSource: true, holderCount: 500000, lpLockedPercent: 10 });
+  assert.equal(small.score, 85);
+  assert.equal(big.score, 94);
+});
+
+test('owner-control findings are tagged so the UI can label them', () => {
+  const r = analyzeContract(usdtLike);
+  const kinds = Object.fromEntries(r.findings.map((f) => [f.label, f.kind]));
+  assert.equal(kinds['New tokens can be minted'], 'control');
+  assert.equal(kinds['Transfers can be paused'], 'control');
+});
+
+test('result lists which sections have no data', () => {
+  const r = computeTrustScore({ contract: usdtLike });
+  assert.deepEqual(r.missingSections, ['social', 'community']);
+  const all = computeTrustScore({ contract: usdtLike, social: bestSocial, community: bestCommunity });
+  assert.deepEqual(all.missingSections, []);
 });
